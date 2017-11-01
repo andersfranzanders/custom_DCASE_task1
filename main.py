@@ -1,16 +1,19 @@
 import csv
 import sys
-import librosa
-import librosa.display as disp
 import numpy as np
 import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 import scipy.signal as sig
+import librosa
+import librosa.display as disp
 
-pathToDCASEapps = "/home/franz/Documents/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+#pathToDCASEapps = "/home/franz/Documents/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+pathToDCASEapps = "/Users/franzanders/Documents/Promotion/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
 pathToMetaFile = pathToDCASEapps + "meta.txt"
 
 _nfft = 1024
-win_length_s = 0.06
+win_length_s = 0.04
 hop_length_s = win_length_s / 2
 
 
@@ -18,26 +21,50 @@ def main():
 
     filenames = getFileNames(pathToMetaFile)
 
-    for fn in filenames[0:1]:
+    for fn in filenames[0:2]:
         print(fn[0])
-
+        #print(fn[0][6:])
+        #sys.exit()
         y, sr = librosa.load(pathToDCASEapps + fn[0])
         y = librosa.core.to_mono(y=y)
-        hop_length_n = hop_length_s * sr
-        win_length_n= win_length_s*sr
+        hop_length_n = int(hop_length_s * sr)
+        win_length_n= int(win_length_s*sr)
         print(hop_length_n)
         print(win_length_n)
-        Y = librosa.core.stft(y, n_fft=_nfft, hop_length=hop_length_n, win_length= win_length_n, window=sig.hamming(_nfft), center=False)
-        P = np.abs(Y)**2
+        MFCCs, MFCCs_delta, MFCCs_deltadelta, P = extractMfccFeatures(y, sr, _nfft, win_length_n, hop_length_n, 40, 20)
+        feats_out = np.concatenate((MFCCs, MFCCs_delta, MFCCs_deltadelta), axis=0)
 
         print(sr)
+        visualize(MFCCs, P, hop_length_n, sr, y)
+
+        np.savetxt("audioFeatures/"+fn[0][6:]+".txt", feats_out, delimiter=' ')  # X is an array
 
 
-        disp.waveplot(y=y, sr=sr)
-        disp.specshow(librosa.core.power_to_db(P, ref=np.max), sr=sr, hop_length=hop_length_s*sr,
-                      x_axis="time", y_axis="linear")
 
-    #matplotlib.pyplot.show()
+
+def visualize(MFCCs, P, hop_length_n, sr, y):
+    plt.figure()
+    plt.subplot(3, 1, 1)
+    disp.waveplot(y=y, sr=sr)
+    plt.subplot(3, 1, 2)
+    disp.specshow(librosa.core.power_to_db(P, ref=np.max), sr=sr, hop_length=hop_length_n,
+                  x_axis="time", y_axis="linear")
+    plt.subplot(3, 1, 3)
+    disp.specshow(MFCCs, sr=sr)
+    plt.show()
+
+
+def extractMfccFeatures(_y, _sr, _nfft, _win_length_n, _hop_length_n, _n_mels, _n_mfcc):
+
+    S = librosa.core.stft(_y, n_fft=_nfft, hop_length=_hop_length_n, win_length=_win_length_n,
+                          window=sig.hamming(_win_length_n), center=False)
+    P = np.abs(S) ** 2
+    M = librosa.feature.melspectrogram(S=P, sr=_sr, n_mels=_n_mels)
+    MFCCs = librosa.feature.mfcc(S=librosa.power_to_db(M), n_mfcc=_n_mfcc)
+    MFCCs_delta = librosa.feature.delta(MFCCs, width=9, order=1)
+    MFCCs_deltadelta = librosa.feature.delta(MFCCs, width=9, order=2)
+    return MFCCs, MFCCs_delta, MFCCs_deltadelta, P
+
 
 def getFileNames(pathToMetaFile):
 
