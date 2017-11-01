@@ -21,25 +21,23 @@ def main():
 
     filenames = getFileNames(pathToMetaFile)
 
-    for fn in filenames[0:2]:
+    for fn in filenames:
         print(fn[0])
-        #print(fn[0][6:])
-        #sys.exit()
-        y, sr = librosa.load(pathToDCASEapps + fn[0])
-        y = librosa.core.to_mono(y=y)
-        hop_length_n = int(hop_length_s * sr)
-        win_length_n= int(win_length_s*sr)
-        print(hop_length_n)
-        print(win_length_n)
-        MFCCs, MFCCs_delta, MFCCs_deltadelta, P = extractMfccFeatures(y, sr, _nfft, win_length_n, hop_length_n, 40, 20)
-        feats_out = np.concatenate((MFCCs, MFCCs_delta, MFCCs_deltadelta), axis=0)
 
-        print(sr)
-        visualize(MFCCs, P, hop_length_n, sr, y)
+        sr, y = loadAudioFile(fn[0])
+        MFCCs, MFCCs_delta, MFCCs_deltadelta, P = extractMfccFeatures(_y=y, _sr=sr, _nfft=_nfft,
+                                                                      _win_length_n=int(win_length_s*sr), _hop_length_n=int(hop_length_s * sr),
+                                                                      _n_mels=40,_fmax=10000, _n_mfcc=20)
+        feats_out = np.concatenate((MFCCs, MFCCs_delta, MFCCs_deltadelta), axis=0)
+        #visualize(MFCCs, P, int(hop_length_s * sr), sr, y)
 
         np.savetxt("audioFeatures/"+fn[0][6:]+".txt", feats_out, delimiter=' ')  # X is an array
 
 
+def loadAudioFile(filename):
+    y, sr = librosa.load(pathToDCASEapps + filename)
+    y = librosa.core.to_mono(y=y)
+    return sr, y
 
 
 def visualize(MFCCs, P, hop_length_n, sr, y):
@@ -54,12 +52,12 @@ def visualize(MFCCs, P, hop_length_n, sr, y):
     plt.show()
 
 
-def extractMfccFeatures(_y, _sr, _nfft, _win_length_n, _hop_length_n, _n_mels, _n_mfcc):
+def extractMfccFeatures(_y, _sr, _nfft, _win_length_n, _hop_length_n, _n_mels, _fmax, _n_mfcc):
 
     S = librosa.core.stft(_y, n_fft=_nfft, hop_length=_hop_length_n, win_length=_win_length_n,
                           window=sig.hamming(_win_length_n), center=False)
     P = np.abs(S) ** 2
-    M = librosa.feature.melspectrogram(S=P, sr=_sr, n_mels=_n_mels)
+    M = librosa.feature.melspectrogram(S=P, sr=_sr, n_mels=_n_mels, fmax=_fmax)
     MFCCs = librosa.feature.mfcc(S=librosa.power_to_db(M), n_mfcc=_n_mfcc)
     MFCCs_delta = librosa.feature.delta(MFCCs, width=9, order=1)
     MFCCs_deltadelta = librosa.feature.delta(MFCCs, width=9, order=2)
