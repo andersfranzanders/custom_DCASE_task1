@@ -8,8 +8,8 @@ import scipy.signal as sig
 import librosa
 import librosa.display as disp
 
-#pathToDCASEapps = "/home/franz/Documents/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
-pathToDCASEapps = "/Users/franzanders/Documents/Promotion/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+pathToDCASEapps = "/home/franz/Documents/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+#pathToDCASEapps = "/Users/franzanders/Documents/Promotion/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
 pathToMetaFile = pathToDCASEapps + "meta.txt"
 
 _nfft = 1024
@@ -66,7 +66,7 @@ def extractMfccFeatures(_y, _sr, _nfft, _win_length_n, _hop_length_n, _n_mels, _
 
 def getFileNames(pathToMetaFile):
 
-    f = open(pathToMetaFile, 'rb')
+    f = open(pathToMetaFile, 'rt', encoding="utf-8")
     reader = csv.reader(f, delimiter='\t')
     return [(row[0], row[1]) for row in reader]
 
