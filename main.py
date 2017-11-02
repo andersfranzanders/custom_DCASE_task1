@@ -10,14 +10,15 @@ import librosa
 import librosa.display as disp
 
 #pathToDCASEapps = "/home/franz/Documents/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
-pathToDCASEapps = "/Users/franzanders/Documents/Promotion/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+#pathToDCASEapps = "/Users/franzanders/Documents/Promotion/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
+pathToDCASEapps = "/home/anders/DCASE2017/DCASE2017-baseline-system/applications/data/TUT-acoustic-scenes-2017-development/"
 pathToMetaFile = pathToDCASEapps + "meta.txt"
 outPath = "../custom_DCASE_task1_data/audioFeatures/"
 
 _nfft = 1024
 win_length_s = 0.04
 hop_length_s = win_length_s / 2
-replace = False
+replace = True
 
 
 def main():
@@ -25,9 +26,11 @@ def main():
     filenames = getFileNames(pathToMetaFile)
 
     alreadyExtractedFiles = set(os.listdir(outPath))
+    counter = 1
+    for fn in filenames:
 
-    for fn in filenames[0:2]:
-        print(fn[0])
+        printInfo(counter, filenames, fn)
+        counter = counter + 1
 
         if not replace and fn[0][6:] + ".txt" in alreadyExtractedFiles:
             print("already there!")
@@ -39,9 +42,15 @@ def main():
                                                                       _win_length_n=int(win_length_s*sr), _hop_length_n=int(hop_length_s * sr),
                                                                       _n_mels=40,_fmax=10000, _n_mfcc=20)
         feats_out = np.concatenate((MFCCs, MFCCs_delta, MFCCs_deltadelta), axis=0)
-        visualize(MFCCs, P, int(hop_length_s * sr), sr, y)
+        #visualize(MFCCs, P, int(hop_length_s * sr), sr, y)
 
-        #np.savetxt(outPath+fn[0][6:]+".txt", feats_out, delimiter=' ')  # X is an array
+        np.savetxt(outPath+fn[0][6:]+".txt", feats_out, delimiter=' ')  # X is an array
+
+
+def printInfo(counter, filenames, fn):
+    print(fn[0])
+    print(str(counter) + "/" + str(len(filenames)))
+
 
 
 def loadAudioFile(filename):
